@@ -15,5 +15,13 @@ def register():
 def login ():
     return render_template('login.html')
 
+@app.route('/student_test')
+def student_test():
+    return render_template('student_test.html')
+
+@app.route('/test_create')
+def create_test():
+    return render_template('test_create.html')
+
 if __name__ == '__main__':
     app.run(debug=True)

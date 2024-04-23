@@ -19,6 +19,7 @@
         input::placeholder {
             text-align: center;
         }
+       
         .form button {
             display: block; /* Make the button a block-level element */
             margin: 0 auto; /* Center the button */
@@ -34,5 +35,20 @@
                 <button id="sub_login">Login</button>
             </div>
         </div>
+        <script>
+            document.getElementById('sub_login').addEventListener('click', function() {
+                var accountId = document.getElementById('Acc_id').value;
+                if (accountId.length === 3) {
+                    // Redirect to page for 3-digit code
+                    window.location.href = '/test_create';
+                } else if (accountId.length === 1) {
+                    // Redirect to page for 1-digit code
+                    window.location.href = '/student_test';
+                } else {
+                    // Handle invalid input length
+                    alert('Invalid account ID length!');
+                }
+            });
+        </script>
     </body>
 {% endblock %}
