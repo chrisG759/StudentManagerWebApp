@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
-    <link rel="stylesheet" href="../static/styles/base.css">
+    <title>Test Taker</title>
 
     <style>
         body {
@@ -76,13 +75,12 @@
         </ul>
         <div class="buttons">
             <a href="/register"><button>Register</button></a>
-            <a href="login.html"><button>Login</button></a>
+            <a href="/login"><button>Login</button></a>
         </div>
     </header>
-    <div class="home_image">
-        <img src="../static/studentTestTaking.jpg" alt="Student taking test">
-    </div>
     <div class="info">
     </div>
+    {% block body %}
+    {%endblock%}
 </body>
 </html>

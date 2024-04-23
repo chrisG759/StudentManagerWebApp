@@ -4,7 +4,6 @@ from sqlalchemy import table, text
 app = Flask(__name__)
 
 @app.route('/')
-
 def index():
     return render_template('base.html')
 
@@ -12,7 +11,7 @@ def index():
 def register():
     return render_template('register.html')
 
-@app.route('/login.html')
+@app.route('/login')
 def login ():
     return render_template('login.html')
 
