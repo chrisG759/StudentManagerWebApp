@@ -10,23 +10,13 @@
             background-color: blue;
             color: white;
         }
+
         header {
             display: flex;
             justify-content: space-between;
             align-items: center; /* Vertically center items */
             padding: 10px 20px;
             background-color: grey; /* Optional: Add a background color */
-        }
-
-        ul {
-            display: flex;
-            align-items: center;
-            margin: 0; /* Remove default margin */
-            list-style-type: none;
-        }
-
-        h1 {
-            margin-left: 17cm; /* Remove default margin */
         }
 
         .buttons {
@@ -70,9 +60,7 @@
 </head>
 <body>
     <header>
-        <ul>
-            <li><h1>Test Taker</h1></li>
-        </ul>
+        <h1>Test Taker</h1>
         <div class="buttons">
             <a href="/register"><button>Register</button></a>
             <a href="/login"><button>Login</button></a>
@@ -81,6 +69,6 @@
     <div class="info">
     </div>
     {% block body %}
-    {%endblock%}
+    {% endblock %}
 </body>
 </html>
