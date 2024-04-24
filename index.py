@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, session
 from sqlalchemy import Table, text, engine, create_engine, MetaData, String, Integer, Column, Float
 from flask_sqlalchemy import SQLAlchemy
 
@@ -63,9 +63,43 @@ def register_post():
         db.session.commit()
         return 'Teacher registered successfully!'
 
+
 @app.route('/login')
 def login():
     return render_template('login.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        account_number = int(request.form['account_number'])
+        
+        # Check if the account number belongs to a student
+        if 1 <= account_number <= 9:
+            user = Student.query.filter_by(id=account_number).first()
+        # Check if the account number belongs to a teacher
+        elif 101 <= account_number <= 109:
+            user = Teacher.query.filter_by(id=account_number).first()
+        else:
+            return render_template('login.html', error='Invalid account number')
+        
+        if user:
+            session['user_id'] = user.id
+            return redirect('/')  # Redirect to the homepage after successful login
+        else:
+            return render_template('login.html', error='User not found')
+    else:
+        return render_template('login.html')
+
+@app.route('/')
+def home():
+    # Retrieve the logged-in user from the session
+    user_id = session.get('user_id')
+    if user_id:
+        # Fetch user details from the database based on user_id
+        user = Student.query.get(user_id) or Teacher.query.get(user_id)
+        return render_template('home.html', user=user)
+    else:
+        return redirect('/login')
 
 @app.route('/student_test')
 def student_test():
@@ -73,3 +107,4 @@ def student_test():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
