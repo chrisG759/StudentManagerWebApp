@@ -2,7 +2,7 @@ from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Pennsylvania2004!@localhost/fp160'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/'
 db = SQLAlchemy(app)
 
 class Student(db.Model):
@@ -16,6 +16,11 @@ class Teacher(db.Model):
 
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
+# Define your database model for the 'questions' table
+class Question(db.Model):
+    __tablename__ = 'questions'
+    question_id = db.Column(db.Integer, primary_key=True)
+    # Add columns for other attributes of the questions table
 
 @app.route('/')
 def index():
@@ -44,6 +49,14 @@ def register_post():
 @app.route('/login')
 def login():
     return render_template('login.html')
+
+@app.route('/student_test')
+def student_test():
+    return render_template('student_test.html')
+
+@app.route('/test_create')
+def create_test():
+    return render_template('test_create.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

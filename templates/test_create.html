@@ -2,12 +2,35 @@
 {% block body %}
     <html>
         <head>
-
+            <title>Test Creater</title>
+            <style>
+                .header {
+                    text-align: center;
+                }
+            </style>
         </head>
         <body>
-            <h1>
-                Test creation page
-            </h1>
+            {% extends "base.html" %}
+            {% block body %}
+                <div class="header">
+                    <h1>Teacher Test Creator</h1>
+                </div>
+                {% for question in questions %}
+                <div>
+                    <p>{{ question[0] }}</p>
+                    <p>{{ question[1] }}</p>
+                    <p>{{ question[2] }}</p>
+                    <p>{{ question[3] }}</p>
+                    <p>{{ question[4] }}</p>
+                    <p>{{ question[5] }}</p>
+                    <p>{{ question[6] }}</p>
+                    <p>{{ question[7] }}</p>
+                    <p>{{ question[8] }}</p>
+                    <p>{{ question[9] }}</p>
+                </div>
+                {% endfor %}
+            {% endblock %}
+
         </body>
     </html>
 {% endblock%}
