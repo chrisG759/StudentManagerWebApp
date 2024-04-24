@@ -2,14 +2,22 @@
 {% block body %}
 <head>
     <style>
-        .header{
+        .header {
             text-align: center;
         }
         #question {
             display: flex;
+            justify-content: center;
+            margin: 0 auto;
         }
-        p{
+        p {
             margin-left: 1cm;
+        }
+        button {
+            color: white;
+        }
+        body {
+            text-align: center;
         }
     </style>
 </head>
@@ -17,18 +25,43 @@
     <div class="header">
         <h1>Teacher Test Creator</h1>
     </div>
-    {% for question in questions %}
-    <div id="question">
-        <p>Question ID: {{ question.question_id }}</p>
-        <p>Question: {{ question.question }}</p>
-        <p>Answer: {{ question.answer }}</p>
-        <p>Press to add to test --></p>
-        <input type="radio">
-    </div>
-    <div id="submit">
-        <button></button>
-    </div>
+    <form id="testForm">
+        {% for question in questions %}
+        <div id="question{{ question.question_id }}">
+            <p>Question ID: {{ question.question_id }}</p>
+            <p>Question: {{ question.question }}</p>
+            <p>Answer: {{ question.answer }}</p>
+            <p>Press to add to test --> <input type="checkbox" name="selectedQuestions" value="{{ question.question_id }}"></p>
+        </div>
+        {% endfor %}
+        <button type="button" id="submitBtn">Submit</button>
+    </form>
 </body>
-    
-    {% endfor %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("submitBtn").addEventListener("click", function() {
+        var selectedQuestions = [];
+        var checkboxes = document.getElementsByName("selectedQuestions");
+        checkboxes.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                selectedQuestions.push(checkbox.value);
+            }
+        });
+
+        // Send selected questions to server
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/create_test", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                console.log("Test created successfully!");
+                // Optionally, display a success message to the user
+            }
+        };
+        xhr.send(JSON.stringify({ selectedQuestions: selectedQuestions }));
+    });
+});
+</script>
+
 {% endblock %}
