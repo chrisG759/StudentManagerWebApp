@@ -3,7 +3,8 @@ from sqlalchemy import Table, text, engine, create_engine, MetaData, String, Int
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-conn_str = "mysql://chris:sirhc@localhost/fp160"
+app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://root:Pennsylvania2004!@localhost/fp160"
+conn_str = "mysql://root:Pennsylvania2004!@localhost/fp160"
 engine = create_engine(conn_str, echo=True)
 db = SQLAlchemy(app)
 
@@ -18,17 +19,19 @@ class Teacher(db.Model):
 
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
+
 # Define your database model for the 'questions' table
 class Question(db.Model):
     __tablename__ = 'questions'
     question_id = db.Column(db.Integer, primary_key=True)
     # Add columns for other attributes of the questions table
+
 # Define Boat model
 metadata = MetaData()
 questions = Table('questions', metadata,
     Column('question_id', Integer, primary_key=True),
     Column('question', String(255)),
-    Column('answer', int),
+    Column('answer', Integer),
 )
 
 @app.route('/')
