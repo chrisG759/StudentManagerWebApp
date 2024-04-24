@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 {% block body %}
-    <h1>
-        Student test page
-    </h1>
-{% endblock%}
+<div class="header">
+    <h1>Student Test</h1>
+</div>
+<form method="POST">
+    {% for selected_question in selected_questions %}
+    <div>
+        <p>{{ selected_question.question }}</p>
+        <input type="text" name="answer_{{ selected_question.id }}">
+    </div>
+    {% endfor %}
+    <button type="submit">Submit Answers</button>
+</form>
+{% endblock %}
