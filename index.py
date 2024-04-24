@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 conn_str = "mysql://chris:sirhc@localhost/fp160"
 engine = create_engine(conn_str, echo=True)
+db = SQLAlchemy(app)
 
 class Student(db.Model):
     __tablename__ = 'students'
@@ -37,7 +38,7 @@ def index():
 @app.route('/test_create', )
 def create_test(qustion_id):
     conn = engine.connect()
-    boat = conn.execute(text("SELECT * FROM questions WHERE question_id = :question_id"), {'id': question_id}).fetchone()
+    boat = conn.execute(text("SELECT * FROM questions WHERE question_id = :question_id"), {'id': 'question_id'}).fetchone()
     conn.close()
 
 @app.route('/register')
