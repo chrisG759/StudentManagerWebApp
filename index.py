@@ -3,7 +3,8 @@ from sqlalchemy import Table, text, engine, create_engine, MetaData, String, Int
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-conn_str = "mysql://chris:sirhc@localhost/fp160"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://chris:sirhc@172.16.181.39/fp160'
+conn_str = "mysql://chris:sirhc@172.16.181.39/fp160"
 engine = create_engine(conn_str, echo=True)
 db = SQLAlchemy(app)
 
@@ -18,28 +19,21 @@ class Teacher(db.Model):
 
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-# Define your database model for the 'questions' table
+
 class Question(db.Model):
     __tablename__ = 'questions'
     question_id = db.Column(db.Integer, primary_key=True)
-    # Add columns for other attributes of the questions table
-# Define Boat model
-metadata = MetaData()
-questions = Table('questions', metadata,
-    Column('question_id', Integer, primary_key=True),
-    Column('question', String(255)),
-    Column('answer', int),
-)
+    question = db.Column(db.String(255))
+    answer = db.Column(db.Integer)
 
 @app.route('/')
 def index():
     return render_template('base.html')
 
-@app.route('/test_create', )
-def create_test(qustion_id):
-    conn = engine.connect()
-    boat = conn.execute(text("SELECT * FROM questions WHERE question_id = :question_id"), {'id': 'question_id'}).fetchone()
-    conn.close()
+@app.route('/test_create')
+def create_test():
+    questions = Question.query.all()
+    return render_template('test_create.html', questions=questions)
 
 @app.route('/register')
 def register():
@@ -68,10 +62,6 @@ def login():
 @app.route('/student_test')
 def student_test():
     return render_template('student_test.html')
-
-@app.route('/test_create')
-def create_test():
-    return render_template('test_create.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
