@@ -1,9 +1,9 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
+from sqlalchemy import table, text
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Pennsylvania2004!@172.16.181.39/fp160'
-
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/'
 db = SQLAlchemy(app)
 
 # Define your database model for the 'questions' table
@@ -20,6 +20,20 @@ def index():
 def register():
     return render_template('register.html')
 
+@app.route('/register', methods=['POST'])
+def register():
+    name = request.form['Name']
+    account_type = request.form['account_type']  # Get the selected account type
+
+    # Create a new User object with the provided data
+    new_user = User(name=name, account_type=account_type)
+
+    # Add the new user to the database
+    db.session.add(new_user)
+    db.session.commit()
+
+    return 'User registered successfully!'
+
 @app.route('/login')
 def login():
     return render_template('login.html')
@@ -30,9 +44,7 @@ def student_test():
 
 @app.route('/test_create')
 def create_test():
-    # Fetch questions from the database
-    questions = Question.query.all()  # Adjust the query as needed
-    return render_template('test_create.html', questions=questions)
+    return render_template('test_create.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
