@@ -1,36 +1,34 @@
 {% extends "base.html" %}
 {% block body %}
-    <html>
-        <head>
-            <title>Test Creater</title>
-            <style>
-                .header {
-                    text-align: center;
-                }
-            </style>
-        </head>
-        <body>
-            {% extends "base.html" %}
-            {% block body %}
-                <div class="header">
-                    <h1>Teacher Test Creator</h1>
-                </div>
-                {% for question in questions %}
-                <div>
-                    <p>{{ question[0] }}</p>
-                    <p>{{ question[1] }}</p>
-                    <p>{{ question[2] }}</p>
-                    <p>{{ question[3] }}</p>
-                    <p>{{ question[4] }}</p>
-                    <p>{{ question[5] }}</p>
-                    <p>{{ question[6] }}</p>
-                    <p>{{ question[7] }}</p>
-                    <p>{{ question[8] }}</p>
-                    <p>{{ question[9] }}</p>
-                </div>
-                {% endfor %}
-            {% endblock %}
-
-        </body>
-    </html>
-{% endblock%}
+<head>
+    <style>
+        .header{
+            text-align: center;
+        }
+        #question {
+            display: flex;
+        }
+        p{
+            margin-left: 1cm;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Teacher Test Creator</h1>
+    </div>
+    {% for question in questions %}
+    <div id="question">
+        <p>Question ID: {{ question.question_id }}</p>
+        <p>Question: {{ question.question }}</p>
+        <p>Answer: {{ question.answer }}</p>
+        <p>Press to add to test --></p>
+        <input type="radio">
+    </div>
+    <div id="submit">
+        <button></button>
+    </div>
+</body>
+    
+    {% endfor %}
+{% endblock %}

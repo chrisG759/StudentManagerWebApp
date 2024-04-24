@@ -38,11 +38,10 @@ questions = Table('questions', metadata,
 def index():
     return render_template('base.html')
 
-@app.route('/test_create', )
-def create_test(qustion_id):
-    conn = engine.connect()
-    boat = conn.execute(text("SELECT * FROM questions WHERE question_id = :question_id"), {'id': 'question_id'}).fetchone()
-    conn.close()
+@app.route('/test_create')
+def create_test():
+    questions = Question.query.all()
+    return render_template('test_create.html', questions=questions)
 
 @app.route('/register')
 def register():
@@ -71,10 +70,6 @@ def login():
 @app.route('/student_test')
 def student_test():
     return render_template('student_test.html')
-
-@app.route('/test_create')
-def create_test():
-    return render_template('test_create.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
