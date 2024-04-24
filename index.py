@@ -1,7 +1,9 @@
 from flask import Flask, render_template
-from sqlalchemy import table, text
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:root@localhost/'
+db = SQLAlchemy(app)
 
 @app.route('/')
 def index():
