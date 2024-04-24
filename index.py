@@ -19,6 +19,7 @@ class Teacher(db.Model):
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
 
+# Define your database model for the 'questions' table
 class Question(db.Model):
     __tablename__ = 'questions'
     question_id = db.Column(db.Integer, primary_key=True)
