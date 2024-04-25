@@ -1,15 +1,23 @@
-{% extends "base.html" %}
-{% block body %}
-<div class="header">
-    <h1>Student Test</h1>
-</div>
-<form method="POST">
-    {% for selected_question in selected_questions %}
-    <div>
-        <p>{{ selected_question.question }}</p>
-        <input type="text" name="answer_{{ selected_question.id }}">
-    </div>
-    {% endfor %}
-    <button type="submit">Submit Answers</button>
-</form>
-{% endblock %}
+<!-- student_page.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Page</title>
+</head>
+<body>
+    <h1>Available Tests</h1>
+    <ul>
+        {% for test in tests %}
+        <li>{{ test.test_name }}</li>
+        <ul>
+            {% for question in test.questions %}
+            <li>{{ question.question }}</li>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </ul>
+</body>
+</html>
