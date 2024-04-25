@@ -69,31 +69,40 @@ def register_post():
         return 'Teacher registered successfully!'
 
 
-@app.route('/login')
-def login():
-    return render_template('login.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        account_number = int(request.form['account_number'])
+        account_number_str = request.form['account_number']
+        
+        # Check if the account number field is empty
+        if not account_number_str:
+            return render_template('login.html', error='Account number is required')
+        
+        try:
+            account_number = int(account_number_str)
+        except ValueError:
+            return render_template('login.html', error='Invalid account number')
         
         # Check if the account number belongs to a student
         if 1 <= account_number <= 9:
-            user = Student.query.filter_by(id=account_number).first()
+            user = Student.query.filter_by(account_id=account_number).first()
         # Check if the account number belongs to a teacher
         elif 101 <= account_number <= 109:
-            user = Teacher.query.filter_by(id=account_number).first()
+            user = Teacher.query.filter_by(account_id=account_number).first()
         else:
             return render_template('login.html', error='Invalid account number')
         
         if user:
-            session['user_id'] = user.id
+            session['user_id'] = user.account_id
             return redirect('/')  # Redirect to the homepage after successful login
         else:
             return render_template('login.html', error='User not found')
     else:
         return render_template('login.html')
+
+
 
 @app.route('/')
 def home():

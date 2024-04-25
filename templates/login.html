@@ -27,13 +27,26 @@
         }
     </style>
 </head>
-    <body>
-        <div class="student">
-            <h2>Login</h2>
-            <div class="form">
-                <input type="text" id="Acc_id" placeholder="Account ID">
-                <button id="sub_login">Login</button>
-            </div>
+<body>
+    <div class="student">
+        <h2>Login</h2>
+        <div class="form">
+            <input type="text" id="Acc_id" placeholder="Account ID">
+            <button id="sub_login">Login</button>
         </div>
-    </body>
+    </div>
+
+    <script>
+        document.getElementById('sub_login').addEventListener('click', function() {
+            var accountNumber = document.getElementById('Acc_id').value;
+            if (accountNumber.length === 1) {
+                window.location.href = '/student_test';
+            } else if (accountNumber.length === 3) {
+                window.location.href = '/test_create'; // Replace 'teacher_page' with the appropriate URL
+            } else {
+                alert('Invalid account number');
+            }
+        });
+    </script>
+</body>
 {% endblock %}
