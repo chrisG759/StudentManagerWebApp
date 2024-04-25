@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Pennsylvania2004!@localhost/fp160'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://chris:sirhc@172.16.181.82/fp160'
 db = SQLAlchemy(app)
 
 class Student(db.Model):
@@ -77,7 +77,16 @@ app.secret_key = 'secret_key'
 @app.route('/login', methods=['GET', 'POST'])
 def handle_login():
     if request.method == 'POST':
-        account_number = int(request.form['account_number'])
+        account_number_str = request.form['account_number']
+        
+        # Check if the account number field is empty
+        if not account_number_str:
+            return render_template('login.html', error='Account number is required')
+        
+        try:
+            account_number = int(account_number_str)
+        except ValueError:
+            return render_template('login.html', error='Invalid account number')
         
         # Check if the account number belongs to a student
         if 1 <= account_number <= 9:
@@ -95,6 +104,8 @@ def handle_login():
             return render_template('login.html', error='User not found')
     else:
         return render_template('login.html')
+
+
 
 @app.route('/')
 def home():
