@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://chris:sirhc@172.16.181.39/fp160'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Pennsylvania2004!@localhost/fp160'
 db = SQLAlchemy(app)
 
 class Student(db.Model):
@@ -70,25 +70,26 @@ def register_post():
 
 
 @app.route('/login')
-def login():
+def render_login():
     return render_template('login.html')
 
+app.secret_key = 'secret_key'
 @app.route('/login', methods=['GET', 'POST'])
-def login():
+def handle_login():
     if request.method == 'POST':
         account_number = int(request.form['account_number'])
         
         # Check if the account number belongs to a student
         if 1 <= account_number <= 9:
-            user = Student.query.filter_by(id=account_number).first()
+            user = Student.query.filter_by(account_id=account_number).first()
         # Check if the account number belongs to a teacher
         elif 101 <= account_number <= 109:
-            user = Teacher.query.filter_by(id=account_number).first()
+            user = Teacher.query.filter_by(account_id=account_number).first()
         else:
             return render_template('login.html', error='Invalid account number')
         
         if user:
-            session['user_id'] = user.id
+            session['user_id'] = user.account_id
             return redirect('/')  # Redirect to the homepage after successful login
         else:
             return render_template('login.html', error='User not found')

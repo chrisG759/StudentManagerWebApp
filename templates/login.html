@@ -31,8 +31,10 @@
         <div class="student">
             <h2>Login</h2>
             <div class="form">
-                <input type="text" id="Acc_id" placeholder="Account ID">
-                <button id="sub_login">Login</button>
+                <form method="post" action="login">
+                    <input type="text" id="Acc_id" name="account_number" placeholder="Account ID">
+                    <button type="submit">Login</button>
+                </form>
             </div>
         </div>
     </body>
