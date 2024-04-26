@@ -1,5 +1,4 @@
 <!-- test_create.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +9,8 @@
 <body>
     <h1>Create Test</h1>
     <form method="POST">
+        <h2>Test Name:</h2>
+        <input type="text" name="test_name" required>
         <h2>Select Questions:</h2>
         {% for question in questions %}
         <div>

@@ -1,10 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from secrets import token_hex
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Pennsylvania2004!@localhost/fp160'
+app.secret_key = token_hex()
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://chris:sirhc@172.16.181.82/fp160'
+
+engine = create_engine('mysql://chris:sirhc@172.16.181.82/fp160')
+sql = engine.connect()
+
 db = SQLAlchemy(app)
 
 class Student(db.Model):
@@ -26,10 +32,23 @@ class Question(db.Model):
     question = db.Column(db.String(255))
     answer = db.Column(db.Integer)
 
-class SelectedQuestion(db.Model):
-    __tablename__ = 'selected_questions'
-    id = db.Column(db.Integer, primary_key=True)
-    question_id = db.Column(db.Integer)
+# Define your database model for the 'tests' table
+class Test(db.Model):
+    __tablename__ = 'tests'
+
+    test_id = db.Column(db.Integer, primary_key=True)
+    test_name = db.Column(db.String(255))
+    teacher_id = db.Column(db.Integer)
+
+    # Define relationship with questions
+    questions = db.relationship('Question', secondary='test_questions', backref=db.backref('tests', lazy=True))
+
+# Define your database model for the association table 'test_questions'
+class TestQuestion(db.Model):
+    __tablename__ = 'test_questions'
+
+    test_id = db.Column(db.Integer, db.ForeignKey('tests.test_id'), primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.question_id'), primary_key=True)
 
 @app.route('/')
 def index():
@@ -38,15 +57,26 @@ def index():
 @app.route('/test_create', methods=['GET', 'POST'])
 def create_test():
     if request.method == 'POST':
+        test_name = request.form['test_name']
+        teacher_id = session.get('user_id')
         selected_question_ids = request.form.getlist('selected_questions')
-        for question_id in selected_question_ids:
-            selected_question = SelectedQuestion(question_id=question_id)
-            db.session.add(selected_question)
+        
+        # Create a new test instance and add it to the database
+        new_test = Test(test_name=test_name, teacher_id=teacher_id)
+        db.session.add(new_test)
         db.session.commit()
+
+        # Associate the selected questions with the new test
+        for question_id in selected_question_ids:
+            test_question = TestQuestion(test_id=new_test.test_id, question_id=question_id)
+            db.session.add(test_question)
+        db.session.commit()
+
         return redirect(url_for('index'))
     else:
         questions = Question.query.all()
         return render_template('test_create.html', questions=questions)
+
 
 @app.route('/register')
 def register():
@@ -123,4 +153,10 @@ def student_test():
     return render_template('student_test.html')
 
 if __name__ == '__main__':
+    db.metadata.reflect(engine)
+    db.metadata.drop_all(engine)
+    db.metadata.create_all(engine)
+
+    quetsion1 = Question()
+
     app.run(debug=True)
