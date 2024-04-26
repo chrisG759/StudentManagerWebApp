@@ -101,7 +101,7 @@ def handle_login():
             if isinstance(user, Student):
                 return redirect(url_for('student_test'))
             else:
-                return redirect(url_for('test_create'))
+                return redirect(url_for('create_test'))
         else:
             return render_template('login.html', error='User not found')
     else:
