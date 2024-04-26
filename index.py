@@ -1,6 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -61,12 +59,12 @@ def register_post():
         new_student = Student(name=name)
         db.session.add(new_student)
         db.session.commit()
-        return 'Student registered successfully!'
+        return render_template('registration_success.html', account_id=new_student.account_id, account_type='student')
     else:
         new_teacher = Teacher(name=name)
         db.session.add(new_teacher)
         db.session.commit()
-        return 'Teacher registered successfully!'
+        return render_template('registration_success.html', account_id=new_teacher.account_id, account_type='teacher')
 
 @app.route('/login')
 def render_login():
