@@ -145,7 +145,6 @@ def submit_test():
     return jsonify({'score': score})
 
 
-
 @app.route('/login')
 def render_login():
     return render_template('login.html')
@@ -182,7 +181,6 @@ def handle_login():
     return render_template('login.html')
 
 
-
 @app.route('/student_test', methods=['GET', 'POST'])
 def student_test():
     if request.method == 'POST':
@@ -194,8 +192,6 @@ def student_test():
         for test in tests:
             test.questions = Question.query.join(TestQuestion).filter(TestQuestion.test_id == test.test_id).all()
         return render_template('student_test.html', tests=tests)
-
-
 
 
 def add_questions():
