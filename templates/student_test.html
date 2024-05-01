@@ -14,13 +14,12 @@
             <ul>
                 {% for question in test.questions %}
                 <li>{{ question.question }}</li>
-                <input type="hidden" name="test_id" value="{{ test.test_id }}">
                 <li><label for="answer_{{ question.question_id }}">Your Answer:</label></li>
                 <li><input type="text" id="answer_{{ question.question_id }}" name="answer_{{ question.question_id }}" required></li>
                 {% endfor %}
             </ul>
             {% endfor %}
-        </ul>
+        </ul>        
         <button type="submit">Submit Answers</button>
     </form>
 </body>

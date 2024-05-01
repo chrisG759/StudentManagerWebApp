@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Create Test</h1>
-    <form method="POST">
+    <form method="POST" action="{{ url_for('create_test') }}">
         <h2>Test Name:</h2>
         <input type="text" name="test_name" required>
         <h2>Select Questions:</h2>

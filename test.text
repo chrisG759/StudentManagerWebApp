@@ -1,3 +1,4 @@
+python code: 
 from flask import Flask, render_template, request, redirect, url_for, session
 from secrets import token_hex
 from sqlalchemy import create_engine
@@ -18,7 +19,6 @@ class Student(db.Model):
 
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-    grade = db.Column(db.Float, default=0)  # Add a grade column
 
     @staticmethod
     def generate_next_id():
@@ -80,7 +80,7 @@ def create_test():
         db.session.commit()
 
         for question_id in selected_question_ids:
-            question = Question.query.get(int(question_id))  # Convert question_id to integer
+            question = Question.query.get(question_id)
             if question:
                 new_test.questions.append(question)
         
@@ -91,6 +91,10 @@ def create_test():
     else:
         questions = Question.query.all()
         return render_template('test_create.html', questions=questions)
+
+
+
+
 
 
 @app.route('/register')
@@ -127,15 +131,9 @@ def submit_test():
     for question in Question.query.all():
         correct_answers[question.question_id] = question.answer
 
-    print("Correct Answers:", correct_answers)  # Debugging: Print correct answers
-
     num_correct_answers = sum(student_answers.get(f'answer_{question_id}', '') == str(correct_answers.get(question_id)) for question_id in correct_answers)
     total_questions = len(correct_answers)
     score = num_correct_answers / total_questions * 100
-
-    print("Number of Correct Answers:", num_correct_answers)  # Debugging: Print number of correct answers
-    print("Total Questions:", total_questions)  # Debugging: Print total questions
-    print("Score:", score)  # Debugging: Print calculated score
 
     # Update student's grade in the database
     student = Student.query.get(student_id)
@@ -143,7 +141,6 @@ def submit_test():
     db.session.commit()
 
     return jsonify({'score': score})
-
 
 
 @app.route('/login')
@@ -197,7 +194,6 @@ def student_test():
 
 
 
-
 def add_questions():
     question1 = Question(question='What is 1+1?', answer=2)
     question2 = Question(question='What is 1+2?', answer=3)
@@ -226,3 +222,56 @@ if __name__ == '__main__':
     add_questions()
 
     app.run(debug=True)
+
+student_test.html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Page</title>
+</head>
+<body>
+    <h1>Available Tests</h1>
+    <form action="{{ url_for('student_test') }}" method="POST">
+        <ul>
+            {% for test in tests %}
+            <li>{{ test.test_name }}</li>
+            <ul>
+                {% for question in test.questions %}
+                <li>{{ question.question }}</li>
+                <li><label for="answer_{{ question.question_id }}">Your Answer:</label></li>
+                <li><input type="text" id="answer_{{ question.question_id }}" name="answer_{{ question.question_id }}" required></li>
+                {% endfor %}
+            </ul>
+            {% endfor %}
+        </ul>        
+        <button type="submit">Submit Answers</button>
+    </form>
+</body>
+</html>
+
+test_create.html: 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Test</title>
+</head>
+<body>
+    <h1>Create Test</h1>
+    <form method="POST" action="{{ url_for('create_test') }}">
+        <h2>Test Name:</h2>
+        <input type="text" name="test_name" required>
+        <h2>Select Questions:</h2>
+        {% for question in questions %}
+        <div>
+            <input type="checkbox" id="question_{{ question.question_id }}" name="selected_questions" value="{{ question.question_id }}">
+            <label for="question_{{ question.question_id }}">{{ question.question }}</label>
+        </div>
+        {% endfor %}
+        <button type="submit">Save Test</button>
+    </form>
+</body>
+</html>
