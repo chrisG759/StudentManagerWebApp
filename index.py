@@ -145,7 +145,6 @@ def submit_test():
     return jsonify({'score': score})
 
 
-
 @app.route('/login')
 def render_login():
     return render_template('login.html')
