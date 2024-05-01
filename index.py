@@ -182,21 +182,46 @@ def handle_login():
     return render_template('login.html')
 
 
-
 @app.route('/student_test', methods=['GET', 'POST'])
 def student_test():
     if request.method == 'POST':
-        # Handle the form submission here
-        # For example, grade the test and update the student's grade
-        return redirect(url_for('index'))  # Redirect to a different page after processing the form
+        # Handle form submission
+        student_answers = request.form
+        student_id = session.get('user_id')
+
+        print("Student ID from session:", student_id)  # Debugging: Print student ID
+
+        if student_id is None:
+            return "Error: Student ID not found in session. Please log in again."
+
+        student = Student.query.get(student_id)
+        if student:
+            # Your existing code to calculate score and update grade
+            correct_answers = {}  # Dictionary to store correct answers for each question
+            for question in Question.query.all():
+                correct_answers[question.question_id] = question.answer
+
+            num_correct_answers = sum(student_answers.get(f'answer_{question_id}', '') == str(correct_answers.get(question_id)) for question_id in correct_answers)
+            total_questions = len(correct_answers)
+            score = num_correct_answers / total_questions * 100
+
+            # Update student's grade in the database
+            student.grade = score
+            db.session.commit()
+
+            return render_template('display_score.html', score=score)
+        else:
+            # Print student IDs from the database for debugging
+            all_student_ids = [student.account_id for student in Student.query.all()]
+            print("All student IDs:", all_student_ids)
+            return "Error: Student not found."
+
     else:
+        # Your existing code to render the student test page
         tests = Test.query.filter(Test.teacher_id != None).all()
         for test in tests:
             test.questions = Question.query.join(TestQuestion).filter(TestQuestion.test_id == test.test_id).all()
         return render_template('student_test.html', tests=tests)
-
-
-
 
 def add_questions():
     question1 = Question(question='What is 1+1?', answer=2)

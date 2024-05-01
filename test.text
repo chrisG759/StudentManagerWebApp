@@ -1,4 +1,4 @@
-python code: 
+python file:
 from flask import Flask, render_template, request, redirect, url_for, session
 from secrets import token_hex
 from sqlalchemy import create_engine
@@ -19,6 +19,7 @@ class Student(db.Model):
 
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
+    grade = db.Column(db.Float, default=0)  # Add a grade column
 
     @staticmethod
     def generate_next_id():
@@ -80,7 +81,7 @@ def create_test():
         db.session.commit()
 
         for question_id in selected_question_ids:
-            question = Question.query.get(question_id)
+            question = Question.query.get(int(question_id))  # Convert question_id to integer
             if question:
                 new_test.questions.append(question)
         
@@ -91,10 +92,6 @@ def create_test():
     else:
         questions = Question.query.all()
         return render_template('test_create.html', questions=questions)
-
-
-
-
 
 
 @app.route('/register')
@@ -131,9 +128,15 @@ def submit_test():
     for question in Question.query.all():
         correct_answers[question.question_id] = question.answer
 
+    print("Correct Answers:", correct_answers)  # Debugging: Print correct answers
+
     num_correct_answers = sum(student_answers.get(f'answer_{question_id}', '') == str(correct_answers.get(question_id)) for question_id in correct_answers)
     total_questions = len(correct_answers)
     score = num_correct_answers / total_questions * 100
+
+    print("Number of Correct Answers:", num_correct_answers)  # Debugging: Print number of correct answers
+    print("Total Questions:", total_questions)  # Debugging: Print total questions
+    print("Score:", score)  # Debugging: Print calculated score
 
     # Update student's grade in the database
     student = Student.query.get(student_id)
@@ -141,6 +144,7 @@ def submit_test():
     db.session.commit()
 
     return jsonify({'score': score})
+
 
 
 @app.route('/login')
@@ -194,6 +198,7 @@ def student_test():
 
 
 
+
 def add_questions():
     question1 = Question(question='What is 1+1?', answer=2)
     question2 = Question(question='What is 1+2?', answer=3)
@@ -223,6 +228,31 @@ if __name__ == '__main__':
 
     app.run(debug=True)
 
+test_create.html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Test</title>
+</head>
+<body>
+    <h1>Create Test</h1>
+    <form method="POST" action="{{ url_for('create_test') }}">
+        <h2>Test Name:</h2>
+        <input type="text" name="test_name" required>
+        <h2>Select Questions:</h2>
+        {% for question in questions %}
+        <div>
+            <input type="checkbox" id="question_{{ question.question_id }}" name="selected_questions" value="{{ question.question_id }}">
+            <label for="question_{{ question.question_id }}">{{ question.question }}</label>
+        </div>
+        {% endfor %}
+        <button type="submit">Save Test</button>
+    </form>
+</body>
+</html>
+
 student_test.html:
 <!DOCTYPE html>
 <html lang="en">
@@ -251,27 +281,14 @@ student_test.html:
 </body>
 </html>
 
-test_create.html: 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Test</title>
-</head>
-<body>
-    <h1>Create Test</h1>
-    <form method="POST" action="{{ url_for('create_test') }}">
-        <h2>Test Name:</h2>
-        <input type="text" name="test_name" required>
-        <h2>Select Questions:</h2>
-        {% for question in questions %}
-        <div>
-            <input type="checkbox" id="question_{{ question.question_id }}" name="selected_questions" value="{{ question.question_id }}">
-            <label for="question_{{ question.question_id }}">{{ question.question }}</label>
-        </div>
-        {% endfor %}
-        <button type="submit">Save Test</button>
-    </form>
-</body>
-</html>
+I am getting this error: c:\Users\chris\OneDrive\Documents\GitHub\CSET160Final\index.py:83: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  question = Question.query.get(int(question_id))  # Convert question_id to integer
+127.0.0.1 - - [01/May/2024 15:11:54] "POST /test_create HTTP/1.1" 302 -
+127.0.0.1 - - [01/May/2024 15:11:54] "GET /student_test HTTP/1.1" 200 -
+127.0.0.1 - - [01/May/2024 15:11:58] "GET /register HTTP/1.1" 200 -
+127.0.0.1 - - [01/May/2024 15:12:02] "POST /register HTTP/1.1" 200 -
+127.0.0.1 - - [01/May/2024 15:12:03] "GET /student_test HTTP/1.1" 200 -
+127.0.0.1 - - [01/May/2024 15:12:17] "POST /student_test HTTP/1.1" 302 -
+127.0.0.1 - - [01/May/2024 15:12:17] "GET / HTTP/1.1" 200 -
+whenever i try to submit a test it just directs me to the index page and does not show the grade or anything. and in the 
+table it just sets the grade as zero
