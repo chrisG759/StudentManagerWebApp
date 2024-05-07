@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from secrets import token_hex
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -33,6 +33,13 @@ class Student(db.Model):
     def __init__(self, name):
         self.name = name
         self.account_id = Student.generate_next_id()
+
+    def update_grade(self, score):
+        """
+        Update the student's grade based on the given score.
+        """
+        self.grade = score
+        db.session.commit()
 
 class Teacher(db.Model):
     __tablename__ = 'teachers'
@@ -113,7 +120,6 @@ def register_post():
         db.session.commit()
         return render_template('registration_success.html', account_id=new_teacher.account_id, account_type='teacher')
 
-from flask import jsonify
 
 @app.route('/submit_test', methods=['POST'])
 def submit_test():
@@ -139,8 +145,7 @@ def submit_test():
 
     # Update student's grade in the database
     student = Student.query.get(student_id)
-    student.grade = score
-    db.session.commit()
+    student.update_grade(score)
 
     return jsonify({'score': score})
 
@@ -183,19 +188,23 @@ def handle_login():
 
 @app.route('/student_test', methods=['GET', 'POST'])
 def student_test():
-    if request.method == 'POST':
-        # Handle form submission
-        student_answers = request.form
-        student_id = session.get('user_id')
+    student_id = session.get('user_id')
 
-        print("Student ID from session:", student_id)  # Debugging: Print student ID
+    if student_id is None:
+        return "Error: Student ID not found in session. Please log in again."
 
-        if student_id is None:
-            return "Error: Student ID not found in session. Please log in again."
+    student = Student.query.get(student_id)
+    if student:
+        # Check if the student has already taken the test
+        if student.grade != 0:  # Assuming grade 0 means the student hasn't taken the test yet
+            return "You have already taken the test."
 
-        student = Student.query.get(student_id)
-        if student:
-            # Your existing code to calculate score and update grade
+        if request.method == 'POST':
+            # Handle form submission
+            student_answers = request.form
+
+            print("Student ID from session:", student_id)  # Debugging: Print student ID
+
             correct_answers = {}  # Dictionary to store correct answers for each question
             for question in Question.query.all():
                 correct_answers[question.question_id] = question.answer
@@ -205,22 +214,21 @@ def student_test():
             score = num_correct_answers / total_questions * 100
 
             # Update student's grade in the database
-            student.grade = score
-            db.session.commit()
+            student.update_grade(score)
 
             return render_template('display_score.html', score=score)
         else:
-            # Print student IDs from the database for debugging
-            all_student_ids = [student.account_id for student in Student.query.all()]
-            print("All student IDs:", all_student_ids)
-            return "Error: Student not found."
-
+            # Your existing code to render the student test page
+            tests = Test.query.filter(Test.teacher_id != None).all()
+            for test in tests:
+                test.questions = Question.query.join(TestQuestion).filter(TestQuestion.test_id == test.test_id).all()
+            return render_template('student_test.html', tests=tests)
     else:
-        # Your existing code to render the student test page
-        tests = Test.query.filter(Test.teacher_id != None).all()
-        for test in tests:
-            test.questions = Question.query.join(TestQuestion).filter(TestQuestion.test_id == test.test_id).all()
-        return render_template('student_test.html', tests=tests)
+        # Print student IDs from the database for debugging
+        all_student_ids = [student.account_id for student in Student.query.all()]
+        print("All student IDs:", all_student_ids)
+        return "Error: Student not found."
+
 
 def add_questions():
     question1 = Question(question='What is 1+1?', answer=2)
