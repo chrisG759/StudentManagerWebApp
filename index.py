@@ -18,7 +18,8 @@ class Student(db.Model):
 
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-    grade = db.Column(db.Float, default=0)  # Add a grade column
+    grade = db.Column(db.Float, default=0)
+    test_taken = db.Column(db.Boolean, default=False)
 
     @staticmethod
     def generate_next_id():
@@ -35,11 +36,11 @@ class Student(db.Model):
         self.account_id = Student.generate_next_id()
 
     def update_grade(self, score):
-        """
-        Update the student's grade based on the given score.
-        """
         self.grade = score
         db.session.commit()
+
+    def can_take_test(self):
+        return not self.test_taken
 
 class Teacher(db.Model):
     __tablename__ = 'teachers'
@@ -98,6 +99,49 @@ def create_test():
     else:
         questions = Question.query.all()
         return render_template('test_create.html', questions=questions)
+
+@app.route('/student_test', methods=['GET', 'POST'])
+def student_test():
+    student_id = session.get('user_id')
+
+    if student_id is None:
+        return "Error: Student ID not found in session. Please log in again."
+
+    student = Student.query.get(student_id)
+    if student:
+        # Check if the student has already taken the test
+        if student.grade != 0:  # Assuming grade 0 means the student hasn't taken the test yet
+            return "You have already taken the test."
+
+        if request.method == 'POST':
+            # Handle form submission
+            student_answers = request.form
+
+            print("Student ID from session:", student_id)  # Debugging: Print student ID
+
+            correct_answers = {}  # Dictionary to store correct answers for each question
+            for question in Question.query.all():
+                correct_answers[question.question_id] = question.answer
+
+            num_correct_answers = sum(student_answers.get(f'answer_{question_id}', '') == str(correct_answers.get(question_id)) for question_id in correct_answers)
+            total_questions = len(correct_answers)
+            score = num_correct_answers / total_questions * 100
+
+            # Update student's grade in the database
+            student.update_grade(score)
+
+            return render_template('display_score.html', score=score)
+        else:
+            # Your existing code to render the student test page
+            tests = Test.query.filter(Test.teacher_id != None).all()
+            for test in tests:
+                test.questions = Question.query.join(TestQuestion).filter(TestQuestion.test_id == test.test_id).all()
+            return render_template('student_test.html', tests=tests)
+    else:
+        # Print student IDs from the database for debugging
+        all_student_ids = [student.account_id for student in Student.query.all()]
+        print("All student IDs:", all_student_ids)
+        return "Error: Student not found."
 
 
 @app.route('/register')
@@ -184,50 +228,6 @@ def handle_login():
             return render_template('login.html', error='User not found or invalid account number')
 
     return render_template('login.html')
-
-
-@app.route('/student_test', methods=['GET', 'POST'])
-def student_test():
-    student_id = session.get('user_id')
-
-    if student_id is None:
-        return "Error: Student ID not found in session. Please log in again."
-
-    student = Student.query.get(student_id)
-    if student:
-        # Check if the student has already taken the test
-        if student.grade != 0:  # Assuming grade 0 means the student hasn't taken the test yet
-            return "You have already taken the test."
-
-        if request.method == 'POST':
-            # Handle form submission
-            student_answers = request.form
-
-            print("Student ID from session:", student_id)  # Debugging: Print student ID
-
-            correct_answers = {}  # Dictionary to store correct answers for each question
-            for question in Question.query.all():
-                correct_answers[question.question_id] = question.answer
-
-            num_correct_answers = sum(student_answers.get(f'answer_{question_id}', '') == str(correct_answers.get(question_id)) for question_id in correct_answers)
-            total_questions = len(correct_answers)
-            score = num_correct_answers / total_questions * 100
-
-            # Update student's grade in the database
-            student.update_grade(score)
-
-            return render_template('display_score.html', score=score)
-        else:
-            # Your existing code to render the student test page
-            tests = Test.query.filter(Test.teacher_id != None).all()
-            for test in tests:
-                test.questions = Question.query.join(TestQuestion).filter(TestQuestion.test_id == test.test_id).all()
-            return render_template('student_test.html', tests=tests)
-    else:
-        # Print student IDs from the database for debugging
-        all_student_ids = [student.account_id for student in Student.query.all()]
-        print("All student IDs:", all_student_ids)
-        return "Error: Student not found."
 
 
 def add_questions():
