@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = token_hex()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://chris:sirhc@172.16.181.16/fp160'
 
-engine = create_engine('mysql://chris:sirhc@172.16.181.82/fp160')
+engine = create_engine('mysql://chris:sirhc@172.16.181.16/fp160')
 Session = sessionmaker(bind=engine)
 
 db = SQLAlchemy(app)
