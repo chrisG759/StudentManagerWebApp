@@ -210,7 +210,7 @@ def handle_login():
         try:
             account_number = int(account_number_str)
         except ValueError:
-            return render_template('login.html', error='Invalid account number')
+            return render_template('login.html', error='Invalid account number');
         
         user = None
         if 1 <= account_number <= 9:
