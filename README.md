@@ -1,4 +1,4 @@
-Learning outcomes
+<h1>Learning outcomes</h1>
 <br>
 Micro-Web Framework Flask<br>
 Object Relation Mapping (ORM) with Flask-SQLAlchemy<br>
