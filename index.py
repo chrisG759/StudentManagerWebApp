@@ -1,260 +1,210 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from secrets import token_hex
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import joinedload
+from flask_migrate import Migrate
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 app = Flask(__name__)
 app.secret_key = token_hex()
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://chris:sirhc@172.16.181.16/fp160'
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
-engine = create_engine('mysql://chris:sirhc@172.16.181.16/fp160')
+engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
 Session = sessionmaker(bind=engine)
 
-db = SQLAlchemy(app)
+# ----------------- MODELS -----------------
 
 class Student(db.Model):
     __tablename__ = 'students'
-
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     grade = db.Column(db.Float, default=0)
-    test_taken = db.Column(db.Boolean, default=False)
 
-    @staticmethod
-    def generate_next_id():
-        session = Session()
-        last_student = session.query(Student).order_by(Student.account_id.desc()).first()
-        session.close()
-        if last_student:
-            return last_student.account_id + 1
-        else:
-            return 100
-
-    def __init__(self, name):
-        self.name = name
-        self.account_id = Student.generate_next_id()
+    student_tests = db.relationship('StudentTest', backref='student', lazy=True)
 
     def update_grade(self, score):
         self.grade = score
         db.session.commit()
 
-    def can_take_test(self):
-        return not self.test_taken
 
 class Teacher(db.Model):
     __tablename__ = 'teachers'
-
     account_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
+
+
+class Test(db.Model):
+    __tablename__ = 'tests'
+    test_id = db.Column(db.Integer, primary_key=True)
+    test_name = db.Column(db.String(255))
+    teacher_id = db.Column(db.Integer)
+
+    student_tests = db.relationship('StudentTest', backref='test', lazy=True)
+
 
 class Question(db.Model):
     __tablename__ = 'questions'
     question_id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.String(255))
-    answer = db.Column(db.Integer)
+    answer = db.Column(db.String(255))
+    testID = db.Column(db.Integer, db.ForeignKey('tests.test_id'))
+    test = db.relationship('Test', backref='questions', lazy=True)
 
-class Test(db.Model):
-    __tablename__ = 'tests'
 
-    test_id = db.Column(db.Integer, primary_key=True)
-    test_name = db.Column(db.String(255))
-    teacher_id = db.Column(db.Integer)
-    questions = db.relationship('Question', secondary='test_questions', backref=db.backref('tests', lazy=True))
-
-class TestQuestion(db.Model):
-    __tablename__ = 'test_questions'
-
+class StudentTest(db.Model):
+    __tablename__ = 'student_tests'
+    student_id = db.Column(db.Integer, db.ForeignKey('students.account_id'), primary_key=True)
     test_id = db.Column(db.Integer, db.ForeignKey('tests.test_id'), primary_key=True)
-    question_id = db.Column(db.Integer, db.ForeignKey('questions.question_id'), primary_key=True)
+    test_taken = db.Column(db.Boolean, default=False)
+
+
 
 @app.route('/')
 def index():
     return render_template('base.html')
 
-@app.route('/test_create', methods=['GET', 'POST'])
+
+@app.route('/create_test', methods=['GET', 'POST'])
 def create_test():
     if request.method == 'POST':
-        test_name = request.form['test_name']
-        teacher_id = session.get('user_id')  
-        print("Teacher ID:", teacher_id) 
-        selected_question_ids = request.form.getlist('selected_questions')
-        
-        if teacher_id is None:
-            return "Error: Teacher ID not found. Please log in again."
+        print(request.form)
+        test_name = request.form.get('testName')
+        student_name = request.form.get('student_name')
 
-        new_test = Test(test_name=test_name, teacher_id=teacher_id)  
-        db.session.add(new_test)
+        student = Student.query.filter_by(name=student_name).first()
+        if not student:
+            return jsonify({'error': 'Student not found'}), 404
+
+        teacher_id = session.get('user_id')
+        if not teacher_id:
+            return redirect(url_for('login'))
+
+        test = Test(test_name=test_name, teacher_id=teacher_id)
+        db.session.add(test)
         db.session.commit()
 
-        for question_id in selected_question_ids:
-            question = Question.query.get(int(question_id))  # Convert question_id to integer
-            if question:
-                new_test.questions.append(question)
-        
+        question_list = request.form.getlist('question[]')
+        answer_list = request.form.getlist('answer[]')
+
+        for q_text, a_text in zip(question_list, answer_list):
+            question = Question(
+                question=q_text,
+                answer=a_text,
+                testID=test.test_id
+            )
+            db.session.add(question)
+
         db.session.commit()
 
-        return redirect(url_for('student_test'))
- 
-    else:
-        questions = Question.query.all()
-        return render_template('test_create.html', questions=questions)
+        return render_template('test_create.html')
+
+    return render_template('create_test.html')
+
 
 @app.route('/student_test', methods=['GET', 'POST'])
 def student_test():
     student_id = session.get('user_id')
-
-    if student_id is None:
-        return "Error: Student ID not found in session. Please log in again."
+    if not student_id:
+        return redirect(url_for('login'))
 
     student = Student.query.get(student_id)
-    if student:
-        # Check if the student has already taken the test
-        if student.grade != 0:  # Assuming grade 0 means the student hasn't taken the test yet
-            return "You have already taken the test."
+    all_tests = Test.query.filter(~Test.student_tests.any(student_id=student_id, test_taken=True)).all()
 
-        if request.method == 'POST':
-            # Handle form submission
-            student_answers = request.form
-
-            print("Student ID from session:", student_id)  # Debugging: Print student ID
-
-            correct_answers = {}  # Dictionary to store correct answers for each question
-            for question in Question.query.all():
-                correct_answers[question.question_id] = question.answer
-
-            num_correct_answers = sum(student_answers.get(f'answer_{question_id}', '') == str(correct_answers.get(question_id)) for question_id in correct_answers)
-            total_questions = len(correct_answers)
-            score = num_correct_answers / total_questions * 100
-
-            # Update student's grade in the database
-            student.update_grade(score)
-
-            return render_template('display_score.html', score=score)
-        else:
-            # Your existing code to render the student test page
-            tests = Test.query.filter(Test.teacher_id != None).all()
-            for test in tests:
-                test.questions = Question.query.join(TestQuestion).filter(TestQuestion.test_id == test.test_id).all()
-            return render_template('student_test.html', tests=tests)
-    else:
-        # Print student IDs from the database for debugging
-        all_student_ids = [student.account_id for student in Student.query.all()]
-        print("All student IDs:", all_student_ids)
-        return "Error: Student not found."
-
-
-@app.route('/register')
-def register():
-    return render_template('register.html')
-
-@app.route('/register', methods=['POST'])
-def register_post():
-    name = request.form['Name']
-    account_type = request.form['account_type']  
-
-    if account_type == 'student':
-        new_student = Student(name=name)
-        db.session.add(new_student)
-        db.session.commit()
-        return render_template('registration_success.html', account_id=new_student.account_id, account_type='student')
-    else:
-        new_teacher = Teacher(name=name)
-        db.session.add(new_teacher)
-        db.session.commit()
-        return render_template('registration_success.html', account_id=new_teacher.account_id, account_type='teacher')
-
-
-@app.route('/submit_test', methods=['POST'])
-def submit_test():
-    student_answers = request.form
-    student_id = session.get('user_id')
-
-    if student_id is None:
-        return "Error: Student ID not found. Please log in again."
-
-    correct_answers = {}  # Dictionary to store correct answers for each question
-    for question in Question.query.all():
-        correct_answers[question.question_id] = question.answer
-
-    print("Correct Answers:", correct_answers)  # Debugging: Print correct answers
-
-    num_correct_answers = sum(student_answers.get(f'answer_{question_id}', '') == str(correct_answers.get(question_id)) for question_id in correct_answers)
-    total_questions = len(correct_answers)
-    score = num_correct_answers / total_questions * 100
-
-    print("Number of Correct Answers:", num_correct_answers)  # Debugging: Print number of correct answers
-    print("Total Questions:", total_questions)  # Debugging: Print total questions
-    print("Score:", score)  # Debugging: Print calculated score
-
-    # Update student's grade in the database
-    student = Student.query.get(student_id)
-    student.update_grade(score)
-
-    return jsonify({'score': score})
-
-
-@app.route('/login')
-def render_login():
-    return render_template('login.html')
-
-app.secret_key = 'secret_key'
-@app.route('/login', methods=['GET', 'POST'])
-def handle_login():
+    selected_test = None
     if request.method == 'POST':
-        account_number_str = request.form.get('account_number')
-        
-        if not account_number_str:
-            return render_template('login.html', error='Account number is required')
-        
-        try:
-            account_number = int(account_number_str)
-        except ValueError:
-            return render_template('login.html', error='Invalid account number');
-        
-        user = None
-        if 1 <= account_number <= 9:
-            user = Teacher.query.filter_by(account_id=account_number).first()
-        elif 100 <= account_number <= 109:
-            user = Student.query.filter_by(account_id=account_number).first()
-        
-        if user:
-            session['user_id'] = user.account_id  # Store user_id in session
-            if isinstance(user, Student):
-                return redirect(url_for('student_test'))
-            else:
-                return redirect(url_for('create_test'))
+        test_id = request.form.get('test_id')
+
+        if test_id:
+            selected_test = Test.query.options(joinedload(Test.questions)) \
+                .filter_by(test_id=test_id).first()
+
+        score = 0
+        total = 0
+        for question in selected_test.questions:
+            submitted_answer = request.form.get(f'answer_{question.question_id}')
+            if submitted_answer:
+                total += 1
+                if submitted_answer.strip().lower() == question.answer.strip().lower():
+                    score += 1
+
+        percent = (score / total) * 100 if total > 0 else 0
+        student.update_grade(percent)
+
+        student_test = StudentTest.query.filter_by(student_id=student_id, test_id=test_id).first()
+        if student_test:
+            student_test.test_taken = True
         else:
-            return render_template('login.html', error='User not found or invalid account number')
+            student_test = StudentTest(student_id=student_id, test_id=test_id, test_taken=True)
+            db.session.add(student_test)
 
-    return render_template('login.html')
-
-
-def add_questions():
-    question1 = Question(question='What is 1+1?', answer=2)
-    question2 = Question(question='What is 1+2?', answer=3)
-    question3 = Question(question='What is 1+3?', answer=4)
-    question4 = Question(question='What is 1+4?', answer=5)
-    question5 = Question(question='What is 1+5?', answer=6)
-    question6 = Question(question='What is 1+6?', answer=7)
-    question7 = Question(question='What is 1+7?', answer=8)
-    question8 = Question(question='What is 1+8?', answer=9)
-    question9 = Question(question='What is 1+9?', answer=10)
-    question10 = Question(question='What is 1+10?', answer=11)
-
-    with app.app_context():
-        db.metadata.reflect(engine)
-        db.metadata.drop_all(engine)
-        db.metadata.create_all(engine)
-
-        db.session.add_all([question1, question2, question3, question4, question5,
-                            question6, question7, question8, question9, question10])
         db.session.commit()
+
+        return f"Test submitted. Score: {percent:.2f}%"
+
+
+    test_id = request.args.get('test_id')
+    if test_id:
+        selected_test = Test.query.options(joinedload(Test.questions)) \
+            .filter_by(test_id=test_id).first()
+
+    return render_template('student_test.html', all_tests=all_tests, selected_test=selected_test)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        account_name = request.form.get('account_name', '').strip()
+        student = Student.query.filter_by(name=account_name).first()
+        teacher = Teacher.query.filter_by(name=account_name).first()
+
+        if student:
+            session['user_id'] = student.account_id
+            session['role'] = 'student'
+            return redirect(url_for('student_test')) 
+
+        if teacher:
+            session['user_id'] = teacher.account_id
+            session['role'] = 'teacher'
+            return render_template('test_create.html')
+
+        return render_template('login.html', error="Invalid credentials")
+
+    return render_template('login.html', error=None)
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form.get('Name', '').strip()
+        role = request.form.get('account_type')
+
+        if not name or not role:
+            return render_template('register.html', error='Please fill out the form')
+
+        if role == 'student':
+            new_user = Student(name=name)
+        else:
+            new_user = Teacher(name=name)
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        return redirect(url_for('login'))
+
+    return render_template('register.html', error=None)
+
+
+
 
 if __name__ == '__main__':
-    db.metadata.reflect(engine)
-    db.metadata.drop_all(engine)
-    db.metadata.create_all(engine)
-    add_questions()
-
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

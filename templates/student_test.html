@@ -1,29 +1,42 @@
 {% extends "base.html" %}
+
 {% block body %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Page</title>
-</head>
-<body>
-    <h1>Available Tests</h1>
-    <form action="{{ url_for('student_test') }}" method="POST">
+<h1>Choose a Test</h1>
+
+<form method="GET" action="{{ url_for('student_test') }}">
+    <label for="test_id">Select Test:</label>
+    <select name="test_id" id="test_id">
+        {% for test in all_tests %}
+            {% if not test.test_taken %}
+                <option value="{{ test.test_id }}"
+                    {% if selected_test and selected_test.test_id == test.test_id %}selected{% endif %}>
+                    {{ test.test_name }}
+                </option>
+            {% else %}
+                <option value="{{ test.test_id }}" disabled>
+                    {{ test.test_name }} - Already Taken
+                </option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <button type="submit">Start Test</button>
+</form>
+
+{% if selected_test %}
+    <hr>
+    <h2>Taking: {{ selected_test.test_name }}</h2>
+    <form method="POST" action="{{ url_for('student_test') }}">
+        <input type="hidden" name="test_id" value="{{ selected_test.test_id }}">
         <ul>
-            {% for test in tests %}
-            <li>{{ test.test_name }}</li>
-            <ul>
-                {% for question in test.questions %}
-                <li>{{ question.question }}</li>
-                <li><label for="answer_{{ question.question_id }}">Your Answer:</label></li>
-                <li><input type="text" id="answer_{{ question.question_id }}" name="answer_{{ question.question_id }}" required></li>
-                {% endfor %}
-            </ul>
+            {% for question in selected_test.questions %}
+                <li>
+                    <strong>{{ question.question }}</strong><br>
+                    <input type="text" name="answer_{{ question.question_id }}" required>
+                </li>
             {% endfor %}
-        </ul>        
+        </ul>
         <button type="submit">Submit Answers</button>
     </form>
-</body>
-</html>
+{% endif %}
+
 {% endblock %}

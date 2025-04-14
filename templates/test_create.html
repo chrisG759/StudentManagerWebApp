@@ -1,26 +1,37 @@
 {% extends "base.html" %}
+
 {% block body %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Test</title>
-</head>
-<body>
-    <h1>Create Test</h1>
-    <form method="POST" action="{{ url_for('create_test') }}">
-        <h2>Test Name:</h2>
-        <input type="text" name="test_name" required>
-        <h2>Select Questions:</h2>
-        {% for question in questions %}
-        <div>
-            <input type="checkbox" id="question_{{ question.question_id }}" name="selected_questions" value="{{ question.question_id }}">
-            <label for="question_{{ question.question_id }}">{{ question.question }}</label>
-        </div>
-        {% endfor %}
-        <button type="submit">Save Test</button>
-    </form>
-</body>
-</html>
+<h1>Create Test</h1>
+<form method="POST" id="testForm" action="{{ url_for('create_test') }}">
+    <div id="questionsContainer"></div>
+
+    <button type="button" id="addQuestion">Add Question</button><br><br>
+
+    <label for="studentName">Assign to Student Name:</label>
+    <input type="text" name="student_name" id="studentName" required><br><br>
+
+    <label for="testName">Assign a test name: </label>
+    <input type="text" name="testName">
+    <input type="submit" value="Create Test" class="submit-btn">
+</form>
+
+<script>
+let questionIndex = 0;
+
+document.getElementById('addQuestion').addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const container = document.getElementById('questionsContainer');
+    const questionGroup = document.createElement('div');
+    questionGroup.innerHTML = `
+    <label>Question:</label>
+    <input type="text" name="question[]" required>
+    <label>Answer:</label>
+    <input type="text" name="answer[]" required><br><br>
+    `;
+
+    container.appendChild(questionGroup);
+    questionIndex++;
+});
+</script>
 {% endblock %}

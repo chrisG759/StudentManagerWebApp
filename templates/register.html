@@ -1,13 +1,18 @@
 {% extends "base.html" %}
 {% block body %}
-    <h2>Register</h2>
-    <form method="post" action="/register">
-        <label for="name">Name:</label>
-        <input type="text" id="Name" name="Name"><br>
-        <select id="account_type" name="account_type">
-            <option value="student">Student</option>
-            <option value="teacher">Teacher</option>
-        </select><br>
-        <input type="submit" value="Register">
-    </form>
+<h2>Register</h2>
+<form method="post" action="/register">
+    <label for="name">Name:</label>
+    <input type="text" id="Name" name="Name"><br>
+
+    <select id="account_type" name="account_type">
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+    </select><br>
+
+    <input type="submit" value="Register" class="submit-btn">
+</form>
+{% if error %}
+    <p>{{ error }}</p>
+{% endif %}
 {% endblock %}
