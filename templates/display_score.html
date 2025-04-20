@@ -1,8 +1,23 @@
 {% extends "base.html" %}
 
 {% block body %}
-    <h1>Test Score</h1>
-    <p>Your score is: <span style="font-size: 2rem; color: #1abc9c;">{{ score }}%</span></p>
-
-    <a href="/student_test"><button>Back</button></a> 
+<div class="student">
+    <h2>Test Score</h2>
+    <div class="form">
+        <p>Your score is: 
+            <span style="font-size: 2rem; color: #1abc9c;">
+                {{ score }}%
+            </span>
+        </p>
+        <a href="{{ url_for('student_test') }}">
+            <button type="button" id="backbutton">Back</button>
+        </a>
+    </div>
+</div>
+<script>
+    const backButton = document.getElementById("backbutton");
+    backButton.addEventListener('click', () => {
+        window.location.href = "/student_test";
+    });
+</script>
 {% endblock %}

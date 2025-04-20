@@ -147,7 +147,7 @@ def student_test():
 
         db.session.commit()
 
-        return f"Test submitted. Score: {percent:.2f}%"
+        return render_template('display_score.html', score=percent)
 
 
     test_id = request.args.get('test_id')
